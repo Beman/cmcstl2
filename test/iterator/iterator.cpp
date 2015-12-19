@@ -46,6 +46,10 @@ struct reference_wrapper {
   }
 
   operator T&() const noexcept { return get(); }
+
+  friend T&& proxy_move(reference_wrapper&& r) noexcept {
+    return std::move(r.get());
+  }
 };
 
 template <class T, std::size_t N>
@@ -376,17 +380,25 @@ void test_iter_swap2() {
 
     static_assert(models::Same<I, decltype(a.begin() + 2)>);
     static_assert(models::CommonReference<const R&, const R&>);
-    static_assert(!models::Swappable<R, R>);
-    static_assert(models::LazyIndirectlyMovable<I, I>);
-
-    // Swappable<R, R>() is not satisfied, and
-    // LazyIndirectlyMovable<I, I>() is satisfied,
-    // so this should resolve to the second overload of iter_swap.
+    static_assert(models::Swappable<R, R>);
     __stl2::iter_swap(a.begin() + 1, a.begin() + 3);
     CHECK(a[0] == 0);
     CHECK(a[1] == 3);
     CHECK(a[2] == 2);
     CHECK(a[3] == 1);
+    int i = 42;
+    __stl2::swap(*(a.begin() + 1), i);
+    CHECK(a[0] == 0);
+    CHECK(a[1] == 42);
+    CHECK(a[2] == 2);
+    CHECK(a[3] == 1);
+    CHECK(i == 3);
+    __stl2::iter_swap(a.begin() + 2, &i);
+    CHECK(a[0] == 0);
+    CHECK(a[1] == 42);
+    CHECK(a[2] == 3);
+    CHECK(a[3] == 1);
+    CHECK(i == 2);
   }
 }
 
