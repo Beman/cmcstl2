@@ -33,20 +33,19 @@ STL2_OPEN_NAMESPACE {
     using box_t = detail::ebo_box<T>;
   public:
     constexpr basic_mixin()
-    noexcept(is_nothrow_default_constructible<T>::value)
-    requires DefaultConstructible<T>()
-    : box_t{}
-    {}
+      noexcept(is_nothrow_default_constructible<T>::value)
+        requires DefaultConstructible<T>()
+      : box_t{}
+      {}
     constexpr basic_mixin(const T& t)
-    noexcept(is_nothrow_copy_constructible<T>::value)
-    requires CopyConstructible<T>()
-    : box_t(t)
-    {}
+      noexcept(is_nothrow_copy_constructible<T>::value)
+        requires CopyConstructible<T>()
+      : box_t(t) {}
+
     constexpr basic_mixin(T&& t)
-    noexcept(is_nothrow_move_constructible<T>::value)
-    requires MoveConstructible<T>()
-    : box_t(__stl2::move(t))
-    {}
+      noexcept(is_nothrow_move_constructible<T>::value)
+        requires MoveConstructible<T>()
+      : box_t(__stl2::move(t)) {}
   };
 
   namespace cursor {
@@ -71,7 +70,7 @@ STL2_OPEN_NAMESPACE {
         using type = decltype(declval<const C&>().read());
       };
       template <class C>
-      using reference_t = meta::_t<reference_type<C>>;
+      using reference_t = typename reference_type<C>::type;
 
       // Not a bool variable template due to GCC PR68666.
       template <class>
@@ -96,7 +95,7 @@ STL2_OPEN_NAMESPACE {
       struct contiguous<C> : true_type {};
 
       template <class T>
-      using mixin_t = meta::_t<mixin_base<T>>;
+      using mixin_t = typename mixin_base<T>::type;
 
       template <class>
       struct difference_type {
@@ -115,8 +114,8 @@ STL2_OPEN_NAMESPACE {
       };
       template <class C>
       requires
-        SignedIntegral<meta::_t<difference_type<C>>>()
-      using difference_type_t = meta::_t<difference_type<C>>;
+        SignedIntegral<typename difference_type<C>::type>()
+      using difference_type_t = typename difference_type<C>::type;
 
       template <class>
       struct value_type {};
@@ -133,8 +132,8 @@ STL2_OPEN_NAMESPACE {
       };
       template <class C>
       requires
-        Same<meta::_t<value_type<C>>, decay_t<meta::_t<value_type<C>>>>()
-      using value_type_t = meta::_t<value_type<C>>;
+        Same<typename value_type<C>::type, decay_t<typename value_type<C>::type>>()
+      using value_type_t = typename value_type<C>::type;
 
       template <class C>
       requires
@@ -209,7 +208,7 @@ STL2_OPEN_NAMESPACE {
         requires(I&& i) { STL2_DEDUCE_AUTO_REF_REF(((I&&)i).pos()); }
       static constexpr auto&& cursor(I&& i)
       STL2_NOEXCEPT_RETURN(__stl2::forward<I>(i).pos())
-    };
+    };  // class access
 
     template <class C>
     using reference_t = access::reference_t<C>;
@@ -313,8 +312,8 @@ STL2_OPEN_NAMESPACE {
       using type = ext::contiguous_iterator_tag;
     };
     template <class C>
-    using category_t = meta::_t<category<C>>;
-  }
+    using category_t = typename category<C>::type;
+  }  // namespace cursor
 
   cursor::Cursor{C}
   class basic_iterator;
@@ -556,12 +555,12 @@ STL2_OPEN_NAMESPACE {
     };
 
     template <class>
-    constexpr bool is_writable = true;
+      constexpr bool is_writable = true;
     template <cursor::Readable C>
-    constexpr bool is_writable<C> = false;
+      constexpr bool is_writable<C> = false;
     template <cursor::Readable C>
-    requires cursor::Writable<C, cursor::value_type_t<C>&&>()
-    constexpr bool is_writable<C> = true;
+      requires cursor::Writable<C, cursor::value_type_t<C>&&>()
+      constexpr bool is_writable<C> = true;
 
     template <class Cur>
     struct iterator_associated_types_base {
@@ -770,7 +769,7 @@ STL2_OPEN_NAMESPACE {
       return *this;
     }
 #endif
-  };
+  };  // class basic_iterator
 
   template <class C>
   requires cursor::EqualityComparable<C, C>()
